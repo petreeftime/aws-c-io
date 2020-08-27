@@ -443,7 +443,7 @@ static void s_on_client_connection_established(struct aws_socket *socket, int er
     }
 
     if (error_code || connection_args->connection_chosen) {
-        if (connection_args->outgoing_options.domain != AWS_SOCKET_LOCAL && error_code) {
+        if ((connection_args->outgoing_options.domain == AWS_SOCKET_IPV4 || connection_args->outgoing_options.domain == AWS_SOCKET_IPV6) && error_code) {
             struct aws_host_address host_address;
             host_address.host = connection_args->host_name;
             host_address.address =
@@ -681,7 +681,7 @@ static void s_on_host_resolved(
 }
 
 int aws_client_bootstrap_new_socket_channel(struct aws_socket_channel_bootstrap_options *options) {
-
+    fprintf(stderr, "New socket channel\n");
     struct aws_client_bootstrap *bootstrap = options->bootstrap;
     AWS_FATAL_ASSERT(options->setup_callback);
     AWS_FATAL_ASSERT(options->shutdown_callback);
@@ -782,6 +782,10 @@ int aws_client_bootstrap_new_socket_channel(struct aws_socket_channel_bootstrap_
         AWS_ZERO_STRUCT(endpoint);
         memcpy(endpoint.address, host_name, host_name_len);
         endpoint.port = 0;
+        if (socket_options->domain == AWS_SOCKET_VSOCK) {
+            fprintf(stderr, "Endpoint port: %d\n", port);
+            endpoint.port = port;
+        }
 
         struct aws_socket *outgoing_socket = aws_mem_acquire(bootstrap->allocator, sizeof(struct aws_socket));
 
