@@ -755,7 +755,7 @@ int aws_client_bootstrap_new_socket_channel(struct aws_socket_channel_bootstrap_
         client_connection_args->channel_data.tls_options.user_data = client_connection_args;
     }
 
-    if (socket_options->domain != AWS_SOCKET_LOCAL) {
+    if (socket_options->domain == AWS_SOCKET_IPV4 || socket_options->domain == AWS_SOCKET_IPV6) {
         client_connection_args->host_name = aws_string_new_from_c_str(bootstrap->allocator, host_name);
 
         if (!client_connection_args->host_name) {
