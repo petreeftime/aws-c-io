@@ -1021,10 +1021,18 @@ static struct aws_tls_ctx *s_tls_ctx_new(
     }
 
     if (options->verify_peer) {
-        if (s2n_config_set_check_stapled_ocsp_response(s2n_ctx->s2n_config, 1) ||
-            s2n_config_set_status_request_type(s2n_ctx->s2n_config, S2N_STATUS_REQUEST_OCSP)) {
-            aws_raise_error(AWS_IO_TLS_CTX_ERROR);
-            goto cleanup_s2n_config;
+        if (s2n_config_set_check_stapled_ocsp_response(s2n_ctx->s2n_config, 1) == S2N_SUCCESS) {
+            if (s2n_config_set_status_request_type(s2n_ctx->s2n_config, S2N_STATUS_REQUEST_OCSP) != S2N_SUCCESS) {
+                aws_raise_error(AWS_IO_TLS_CTX_ERROR);
+                goto cleanup_s2n_config;
+            }
+        } else {
+            if (s2n_error_get_type(s2n_errno) == S2N_ERR_T_USAGE) {
+                AWS_LOGF_INFO(AWS_LS_IO_TLS, "ctx: cannot enabled ocsp stapling: %s", s2n_strerror(s2n_errno, "EN"));
+            } else {
+                aws_raise_error(AWS_IO_TLS_CTX_ERROR);
+                goto cleanup_s2n_config;
+            }
         }
 
         if (options->ca_path) {
